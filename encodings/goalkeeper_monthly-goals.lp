@@ -5,6 +5,10 @@
 % About: Based on a users circumstances, monthly expenses, and goals (monthly and end-of-term), this ASP program will determine what course of action the user should follow to achieve their goals.
 %-------------------------------------------------------
 
+%-------------------------------------------------------
+% Preliminaries
+%-------------------------------------------------------
+
 % the program will read in a number of constants from the user
 #const term = 6 %months
 
@@ -19,3 +23,13 @@
 
 % a monthly goal which would be *nice* to have - i.e. how much extra the user would like to have at the end of the month
 % weak_monthly_goal(dollar_amount, weight).
+
+
+%-------------------------------------------------------
+% Reasoning
+%-------------------------------------------------------
+
+to be continued...
+
+
+
