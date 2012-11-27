@@ -6,30 +6,43 @@
 %-------------------------------------------------------
 
 %-------------------------------------------------------
-% Preliminaries
+% Constants
+%-------------------------------------------------------
+#const termlength = 2. %months
+
+
+%-------------------------------------------------------
+% Inputs
 %-------------------------------------------------------
 
 % the program will read in a number of constants from the user
-#const termlength = 6. %months
 months(1..termlength).
 #hide months/1.
-weight_scale(1..10). %the scale for weights of weak goals and expenses
-#hide weight_scale/1.
+
+% a beginning balance
+% beginning_balance(dollar_amount).
+#hide beginning_balance/1.
+% copy the beginning balance as the first passover amount
+monthly_passover_balance(0, AMOUNT) :- beginning_balance(AMOUNT).
+
+% a monthly revenue which is debited every month
+% monthly_income(id, dollar_amount).
+#hide monthly_income/2.
 
 % a monthly expense which is always deducted every month
 % strong_monthly_expense(id, dollar_amount).
 #hide strong_monthly_expense/2.
 
 % a monthly expense which is *sometimes* or *optionally* deductible
-% weak_monthly_expense(id, dollar_amount, weight).
-#hide weak_monthly_expense/3.
+% weak_monthly_expense(id, dollar_amount).
+#hide weak_monthly_expense/2.
 
 % a monthly goal which *must* be made - i.e. how much the user has to have at the end of the month
 % strong_monthly_goal(id, dollar_amount).
 #hide strong_monthly_goal/2.
 
 % a monthly goal which would be *nice* to have - i.e. how much extra the user would like to have at the end of the month
-% weak_monthly_goal(id, dollar_amount, weight).
+% weak_monthly_goal(id, dollar_amount).
 #hide weak_monthly_goal/2.
 
 % the goal (balance) that must be achieved by the end of the term
@@ -44,9 +57,28 @@ weight_scale(1..10). %the scale for weights of weak goals and expenses
 month_expense(MONTH_NUM, ID, AMOUNT) :- strong_monthly_expense(ID, AMOUNT), months(MONTH_NUM).
 month_goal(MONTH_NUM, ID, AMOUNT) :- strong_monthly_goal(ID, AMOUNT), months(MONTH_NUM).
 
-% for each weak monthly expense/goal, create a monthly expense/goal for at least zero to termlength
-1{month_expense(MONTH_NUM, ID, AMOUNT) : months(MONTH_NUM)}termlength :- weak_monthly_expense(ID, AMOUNT, WEIGHT).
-1{month_goal(MONTH_NUM, ID, AMOUNT) : months(MONTH_NUM)}termlength :- weak_monthly_goal(ID, AMOUNT, WEIGHT).
+% for each weak monthly expense/goal, either create a monthly expense/goal for it or not
+num_of_weak_monthly_expenses(NUM) :- NUM := #count { weak_monthly_expense(ID, AMOUNT) }.
+num_of_weak_monthly_goals(NUM) :- NUM := #count { weak_monthly_goal(ID, AMOUNT) }.
 
-% compute each months balance based on the expenses and goals
-% using clingo aggregates...
+month_expense(MONTH_NUM, ID, AMOUNT) :- weak_monthly_expense(ID, AMOUNT), months(MONTH_NUM).
+month_goal(MONTH_NUM, ID, AMOUNT) :- weak_monthly_goal(ID, AMOUNT), months(MONTH_NUM).
+
+% compute the balance of the expenses for each month
+total_expenses_per_month(MONTH_NUM, SUM) :- SUM := #sum [ month_expense(MONTH_NUM, ID, AMOUNT)=AMOUNT ], months(MONTH_NUM).
+
+% compute the balance of the goals for each month
+total_goals_per_month(MONTH_NUM, SUM) :- SUM := #sum [ month_goal(MONTH_NUM, ID, AMOUNT)=AMOUNT ], months(MONTH_NUM).
+
+% compute the balance for each month
+total_balance_per_month(MONTH_NUM, (INCOME+PASSOVER)-(GOALS+EXPENSES)) :- 
+    monthly_income(ID, INCOME), total_goals_per_month(MONTH_NUM, GOALS), total_expenses_per_month(MONTH_NUM, EXPENSES), monthly_passover_balance(MONTH_NUM-1, PASSOVER),
+    months(MONTH_NUM).
+
+% compute the passover amount for a month
+monthly_passover_balance(MONTH_NUM, PASSOVER) :- total_balance_per_month(MONTH_NUM, PASSOVER), months(MONTH_NUM).
+
+% determine if the term goal is reachable or not
+
+
+
