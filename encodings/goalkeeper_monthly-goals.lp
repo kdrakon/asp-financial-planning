@@ -5,10 +5,13 @@
 % About: Based on a users circumstances, monthly expenses, and goals (monthly and end-of-term), this ASP program will determine what course of action the user should follow to achieve their goals.
 %-------------------------------------------------------
 
+#hide.
+
 %-------------------------------------------------------
 % Constants
 %-------------------------------------------------------
-#const termlength = 1. %months
+#const divisor = 100. %divides balances into smaller integers
+#const termlength = 6. %months
 
 %-------------------------------------------------------
 % Inputs
@@ -57,14 +60,11 @@ month_goal(MONTH_NUM, ID, AMOUNT) :- strong_monthly_goal(ID, AMOUNT), months(MON
 month_expense(MONTH_NUM, ID, AMOUNT) :- strong_monthly_expense(ID, AMOUNT), months(MONTH_NUM).
 
 % for each weak monthly expense/goal, either create a monthly expense/goal for it or not
-num_of_weak_monthly_goals(NUM) :- NUM := #count { weak_monthly_goal(ID, AMOUNT) }.
-num_of_weak_monthly_expenses(NUM) :- NUM := #count { weak_monthly_expense(ID, AMOUNT) }.
-
-month_goal(MONTH_NUM, ID, AMOUNT) :- weak_monthly_goal(ID, AMOUNT), months(MONTH_NUM).
-month_expense(MONTH_NUM, ID, AMOUNT) :- weak_monthly_expense(ID, AMOUNT), months(MONTH_NUM).
+0{month_goal(MONTH_NUM, ID, AMOUNT) : months(MONTH_NUM)}termlength :- weak_monthly_goal(ID, AMOUNT).
+0{month_expense(MONTH_NUM, ID, AMOUNT) : months(MONTH_NUM)}termlength :- weak_monthly_expense(ID, AMOUNT).
 
 % compute the balance of the goals for each month
-total_goals_per_month(MONTH_NUM, SUM) :- SUM := #sum [ month_goal(MONTH_NUM, ID, AMOUNT)=AMOUNT ], months(MONTH_NUM).
+total_goals_per_month(MONTH_NUM, SUM) :- SUM := #sum [ month_goal(MONTH_NUM, ID, AMOUNT)=AMOUNT ],  months(MONTH_NUM).
 
 % compute the balance of the expenses for each month
 total_expenses_per_month(MONTH_NUM, SUM) :- SUM := #sum [ month_expense(MONTH_NUM, ID, AMOUNT)=AMOUNT ], months(MONTH_NUM).
@@ -77,7 +77,10 @@ total_balance_per_month(MONTH_NUM, (INCOME+PASSOVER)-(GOALS+EXPENSES)) :-
 % compute the passover amount for a month
 monthly_passover_balance(MONTH_NUM, PASSOVER) :- total_balance_per_month(MONTH_NUM, PASSOVER), months(MONTH_NUM).
 
-% determine if the term goal is reachable or not
+% compute the balance of this term
+term_balance(TOTAL_BALANCE) :- TOTAL_BALANCE := #sum [ total_balance_per_month(MONTH_NUM, BALANCE)=BALANCE/divisor ], months(MONTH_NUM).
 
+% constraint against those solutions where the balance is less than the term goal
+:- term_balance(B), term_goal(T), B<(T/divisor).
 
-
+#show term_balance/1.
